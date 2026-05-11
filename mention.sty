@@ -48,9 +48,11 @@
 
 \int_new:N \g_phfcct_pending_int
 \int_new:N \g_phfcct_next_color_int
+\int_new:N \l_phfcct_next_cmd_int
 
 \tl_new:N \g_phfcct_viewer_user_tl
 \tl_new:N \g_phfcct_viewer_handle_tl
+\tl_new:N \g_phfcct_pending_margin_tl
 \tl_new:N \l_phfcct_maker_initials_tl
 \tl_new:N \l_phfcct_maker_color_tl
 \tl_new:N \l_phfcct_maker_handle_tl
@@ -64,8 +66,11 @@
 \seq_new:N \l_phfcct_route_seq
 \seq_new:N \l_phfcct_home_path_seq
 \seq_new:N \g_phfcct_default_color_seq
+\seq_new:N \g_phfcct_target_cmd_seq
 
 \bool_new:N \l_phfcct_resolved_bool
+\bool_new:N \l_phfcct_margin_removed_space_bool
+\bool_new:N \g_phfcct_comment_targeted_viewer_bool
 \bool_new:N \g_phfcct_auto_detect_attempted_bool
 
 \cs_generate_variant:Nn \seq_set_split:Nnn { NnV }
@@ -278,19 +283,104 @@
 
 \cs_new_protected:Npn \phfcct_emit_margin:nnn #1#2#3
   {
-    \marginnote{%
-      \raggedright
-      \setlength{\fboxsep}{1pt}%
-      \IfBooleanTF{#3}
-        {
-          \colorbox{#1color}{%
-            \color{white}\normalfont\sffamily\footnotesize\strut #2}
+    \phfcct_queue_margin:nnn {#1} {#2} {#3}
+  }
+
+\cs_new_protected:Npn \phfcct_margin_label:nnn #1#2#3
+  {
+    \int_compare:nNnTF {#3} = { 1 }
+      {
+        \colorbox{#1color}{%
+          \color{white}\normalfont\sffamily\footnotesize\strut #2}
+      }
+      {
+        \fcolorbox{#1color}{white}{%
+          \normalfont\sffamily\footnotesize\color{#1color}\strut #2}
+      }
+  }
+
+\cs_new_protected:Npn \phfcct_queue_margin:nnn #1#2#3
+  {
+    \tl_if_empty:NF \g_phfcct_pending_margin_tl
+      { \tl_gput_right:Nn \g_phfcct_pending_margin_tl { \hspace{0.2em} } }
+    \tl_gput_right:Nx \g_phfcct_pending_margin_tl
+      {
+        \exp_not:N \phfcct_margin_label:nnn
+          {#1}
+          { \exp_not:n {#2} }
+          { \IfBooleanTF{#3}{1}{0} }
+      }
+  }
+\cs_generate_variant:Nn \phfcct_queue_margin:nnn { nVn }
+
+\cs_new_protected:Npn \phfcct_flush_margin:
+  {
+    \tl_if_empty:NF \g_phfcct_pending_margin_tl
+      {
+        \marginnote{%
+          \raggedright
+          \setlength{\fboxsep}{1pt}%
+          \tl_use:N \g_phfcct_pending_margin_tl
         }
-        {
-          \fcolorbox{#1color}{white}{%
-            \normalfont\sffamily\footnotesize\color{#1color}\strut #2}
-        }
-    }
+        \tl_gclear:N \g_phfcct_pending_margin_tl
+      }
+  }
+
+\cs_new_protected:Npn \phfcct_maybe_flush_margin:
+  {
+    \bool_set_false:N \l_phfcct_margin_removed_space_bool
+    \phfcct_maybe_flush_margin_trim_spaces:
+  }
+
+\cs_new_protected:Npn \phfcct_maybe_flush_margin_trim_spaces:
+  {
+    \peek_meaning_remove:NTF \c_space_token
+      {
+        \bool_set_true:N \l_phfcct_margin_removed_space_bool
+        \phfcct_maybe_flush_margin_trim_spaces:
+      }
+      { \phfcct_maybe_flush_margin_check: }
+  }
+
+\cs_new_protected:Npn \phfcct_maybe_flush_margin_check:
+  {
+    \int_set:Nn \l_phfcct_next_cmd_int { 1 }
+    \phfcct_maybe_flush_margin_loop:
+  }
+
+\cs_new_protected:Npn \phfcct_maybe_flush_margin_loop:
+  {
+    \int_compare:nNnTF
+      { \l_phfcct_next_cmd_int }
+      >
+      { \seq_count:N \g_phfcct_target_cmd_seq }
+      {
+        \phfcct_restore_peeked_space:
+        \phfcct_flush_margin:
+      }
+      {
+        \tl_set:Nx \l_tmpa_tl
+          {
+            \seq_item:Nn \g_phfcct_target_cmd_seq
+              { \int_use:N \l_phfcct_next_cmd_int }
+          }
+        \exp_args:NV \phfcct_if_next_targeted_command:N \l_tmpa_tl
+      }
+  }
+
+\cs_new_protected:Npn \phfcct_if_next_targeted_command:N #1
+  {
+    \peek_meaning:NTF #1
+      { \phfcct_restore_peeked_space: }
+      {
+        \int_incr:N \l_phfcct_next_cmd_int
+        \phfcct_maybe_flush_margin_loop:
+      }
+  }
+
+\cs_new_protected:Npn \phfcct_restore_peeked_space:
+  {
+    \bool_if:NT \l_phfcct_margin_removed_space_bool { \space }
   }
 
 \cs_new_protected:Npn \phfcct_typeset_inline:nnn #1#2#3
@@ -307,6 +397,7 @@
       \tl_clear:N \l_phfcct_recipient_csv_tl
       \tl_clear:N \l_phfcct_route_csv_tl
       \bool_set_false:N \l_phfcct_resolved_bool
+      \bool_gset_false:N \g_phfcct_comment_targeted_viewer_bool
       \quark_if_no_value:nF {#3}
         { \phfcct_parse_optional:n {#3} }
       \phfcct_parse_body:n {#4}
@@ -321,9 +412,10 @@
               \seq_if_in:NVTF \l_phfcct_route_seq \g_phfcct_viewer_handle_tl
                 {
                   \int_gincr:N \g_phfcct_pending_int
-                  \phfcct_emit_margin:nnn
+                  \bool_gset_true:N \g_phfcct_comment_targeted_viewer_bool
+                  \phfcct_queue_margin:nVn
                     {#1}
-                    { \l_phfcct_maker_initials_runtime_tl }
+                    \l_phfcct_maker_initials_runtime_tl
                     {#2}
                 }
                 { }
@@ -360,7 +452,12 @@
     \exp_args:Nc \DeclareDocumentCommand {#2} { t! o m }
       {
         \phfcct_comment:nnnn {#2} {##1} {##2} {##3}
+        \bool_if:NTF \g_phfcct_comment_targeted_viewer_bool
+          { \phfcct_maybe_flush_margin: }
+          { \phfcct_flush_margin: }
       }
+    \seq_gput_right:Nx \g_phfcct_target_cmd_seq
+      { \exp_not:c {#2} }
     \phfcct_resolve_viewer:
   }
 

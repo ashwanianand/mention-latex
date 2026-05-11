@@ -60,6 +60,8 @@ Semantics:
 - `\Alice![bob]{...}` marks the comment as important.
 - `resolved` keeps the comment visible inline but makes it dormant: no margin
   highlight and no unresolved-count contribution.
+- Consecutive comments for the active viewer share one side-by-side margin
+  note, so co-authors commenting at the same spot do not cover each other.
 
 Enable the header count with:
 
