@@ -33,20 +33,28 @@
       {Package texosquery not found; home-directory viewer detection disabled}%
   }
 
-\newcommand\phfcctprovidetolmuted[4]{%
+\@ifpackageloaded{colorblind}
+  {}
+  {%
+    \IfFileExists{colorblind.sty}
+      {\RequirePackage[Tol,keep-defaults,no-tikz]{colorblind}}
+      {}%
+  }
+
+\newcommand\phfcctprovideddefaultcolor[4]{%
   \csname @ifundefinedcolor\endcsname{T-Q-M#1}%
-    {\definecolor{phfcctTolMuted#1}{RGB}{#2,#3,#4}}%
-    {\colorlet{phfcctTolMuted#1}{T-Q-M#1}}%
+    {\definecolor{phfcctDefaultColor#1}{RGB}{#2,#3,#4}}%
+    {\colorlet{phfcctDefaultColor#1}{T-Q-M#1}}%
 }
-\phfcctprovidetolmuted{1}{51}{34}{136}
-\phfcctprovidetolmuted{2}{136}{204}{238}
-\phfcctprovidetolmuted{3}{68}{170}{153}
-\phfcctprovidetolmuted{4}{17}{119}{51}
-\phfcctprovidetolmuted{5}{153}{153}{51}
-\phfcctprovidetolmuted{6}{221}{204}{119}
-\phfcctprovidetolmuted{7}{204}{102}{119}
-\phfcctprovidetolmuted{8}{136}{34}{85}
-\phfcctprovidetolmuted{9}{170}{68}{153}
+\phfcctprovideddefaultcolor{1}{0}{148}{240}
+\phfcctprovideddefaultcolor{2}{242}{108}{13}
+\phfcctprovideddefaultcolor{3}{65}{149}{42}
+\phfcctprovideddefaultcolor{4}{128}{55}{134}
+\phfcctprovideddefaultcolor{5}{0}{129}{129}
+\phfcctprovideddefaultcolor{6}{148}{7}{24}
+\phfcctprovideddefaultcolor{7}{160}{120}{0}
+\phfcctprovideddefaultcolor{8}{35}{195}{155}
+\phfcctprovideddefaultcolor{9}{100}{100}{100}
 
 \ExplSyntaxOn
 \prop_new:N \g_phfcct_cmd_to_handle_prop
@@ -95,9 +103,9 @@
 \int_gset:Nn \g_phfcct_next_color_int { 1 }
 \seq_gset_from_clist:Nn \g_phfcct_default_color_seq
   {
-    phfcctTolMuted1, phfcctTolMuted2, phfcctTolMuted3,
-    phfcctTolMuted4, phfcctTolMuted5, phfcctTolMuted6,
-    phfcctTolMuted7, phfcctTolMuted8, phfcctTolMuted9
+    phfcctDefaultColor1, phfcctDefaultColor2, phfcctDefaultColor3,
+    phfcctDefaultColor4, phfcctDefaultColor5, phfcctDefaultColor6,
+    phfcctDefaultColor7, phfcctDefaultColor8, phfcctDefaultColor9
   }
 
 \cs_new:Npn \phfcct_normalize_handle:n #1

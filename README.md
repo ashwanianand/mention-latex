@@ -19,12 +19,6 @@ The package depends on `phfcc`, `xparse`, `marginnote`, and `xcolor`.
 Automatic viewer detection can also use `catchfile` and `texosquery` when they
 are available, but manual viewer selection works without them.
 
-When `color=...` is omitted for an author, `mention` uses private copies of
-Paul Tol's muted colorblind-friendly `T-Q-M1` through `T-Q-M9` colors. If the
-`colorblind` package has already defined those colors, `mention` copies them;
-otherwise it uses the same RGB values internally. The package does not load
-`colorblind` and does not redefine document colors.
-
 ## Basic Use
 
 Put `mention.sty` next to your main `.tex` file, or install it somewhere
@@ -48,6 +42,23 @@ Define author comment commands:
   handle=bob,
   userid=bob
 ]{Bob}
+```
+
+If `color=...` is omitted, `mention` chooses an author color automatically.
+When the `colorblind` package is available, the default cycle uses private
+copies of Paul Tol's muted `T-Q-M1` through `T-Q-M9` colors. `mention` loads
+`colorblind` with `Tol,keep-defaults,no-tikz`, so default document colors are
+not changed. If `colorblind` is missing, or was already loaded without defining
+the `T-Q-M` colors, `mention` falls back to its built-in `xcolor` palette.
+
+Explicit colors always win:
+
+```tex
+\phfMakeTargetedCommentCommand[
+  initials={AL},
+  color=blue!60!black,
+  handle=alice
+]{Alice}
 ```
 
 Use comma-separated recipient handles in the optional argument:
