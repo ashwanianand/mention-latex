@@ -17,6 +17,7 @@
 % mention.pdf.
 
 \RequirePackage{phfcc}
+\RequirePackage{xcolor}
 \RequirePackage{xparse}
 \RequirePackage{marginnote}
 \IfFileExists{catchfile.sty}
@@ -32,14 +33,20 @@
       {Package texosquery not found; home-directory viewer detection disabled}%
   }
 
-\definecolor{phfcct0}{RGB}{0,148,240}
-\definecolor{phfcct1}{RGB}{242,108,13}
-\definecolor{phfcct2}{RGB}{65,149,42}
-\definecolor{phfcct3}{RGB}{128,55,134}
-\definecolor{phfcct4}{RGB}{0,129,129}
-\definecolor{phfcct5}{RGB}{148,7,24}
-\definecolor{phfcct6}{RGB}{160,120,0}
-\definecolor{phfcct7}{RGB}{35,195,155}
+\newcommand\phfcctprovidetolmuted[4]{%
+  \csname @ifundefinedcolor\endcsname{T-Q-M#1}%
+    {\definecolor{phfcctTolMuted#1}{RGB}{#2,#3,#4}}%
+    {\colorlet{phfcctTolMuted#1}{T-Q-M#1}}%
+}
+\phfcctprovidetolmuted{1}{51}{34}{136}
+\phfcctprovidetolmuted{2}{136}{204}{238}
+\phfcctprovidetolmuted{3}{68}{170}{153}
+\phfcctprovidetolmuted{4}{17}{119}{51}
+\phfcctprovidetolmuted{5}{153}{153}{51}
+\phfcctprovidetolmuted{6}{221}{204}{119}
+\phfcctprovidetolmuted{7}{204}{102}{119}
+\phfcctprovidetolmuted{8}{136}{34}{85}
+\phfcctprovidetolmuted{9}{170}{68}{153}
 
 \ExplSyntaxOn
 \prop_new:N \g_phfcct_cmd_to_handle_prop
@@ -88,8 +95,9 @@
 \int_gset:Nn \g_phfcct_next_color_int { 1 }
 \seq_gset_from_clist:Nn \g_phfcct_default_color_seq
   {
-    phfcct0, phfcct1, phfcct2, phfcct3,
-    phfcct4, phfcct5, phfcct6, phfcct7
+    phfcctTolMuted1, phfcctTolMuted2, phfcctTolMuted3,
+    phfcctTolMuted4, phfcctTolMuted5, phfcctTolMuted6,
+    phfcctTolMuted7, phfcctTolMuted8, phfcctTolMuted9
   }
 
 \cs_new:Npn \phfcct_normalize_handle:n #1
@@ -214,23 +222,24 @@
     \tl_trim_spaces:N \l_tmpa_tl
     \tl_if_blank:VTF \l_tmpa_tl
       {
-        \int_compare:nNnTF
-          { \g_phfcct_next_color_int }
-          >
-          { \seq_count:N \g_phfcct_default_color_seq }
-          { \tl_set:Nn \l_tmpb_tl { red } }
+        \int_set:Nn \l_tmpa_int
           {
-            \tl_set:Nx \l_tmpb_tl
-              {
-                \seq_item:Nn \g_phfcct_default_color_seq
-                  { \int_use:N \g_phfcct_next_color_int }
-              }
-            \int_gincr:N \g_phfcct_next_color_int
+            \int_mod:nn
+              { \g_phfcct_next_color_int - 1 }
+              { \seq_count:N \g_phfcct_default_color_seq }
+            + 1
           }
+        \tl_set:Nx \l_tmpb_tl
+          {
+            \seq_item:Nn \g_phfcct_default_color_seq
+              { \int_use:N \l_tmpa_int }
+          }
+        \int_gincr:N \g_phfcct_next_color_int
       }
       { \tl_set_eq:NN \l_tmpb_tl \l_tmpa_tl }
     \exp_args:NnV \colorlet {#1color} \l_tmpb_tl
   }
+\cs_generate_variant:Nn \phfcct_set_command_color:nn { nV }
 
 \cs_new_protected:Npn \phfcct_add_recipient:n #1
   {
@@ -438,7 +447,7 @@
       { \tl_set:Nx \l_phfcct_maker_handle_tl { \phfcct_normalize_handle:n {#2} } }
     \tl_set:Nx \l_phfcct_maker_handle_tl
       { \phfcct_normalize_handle:n { \l_phfcct_maker_handle_tl } }
-    \phfcct_set_command_color:nn {#2} { \l_phfcct_maker_color_tl }
+    \phfcct_set_command_color:nV {#2} \l_phfcct_maker_color_tl
     \prop_gput:NnV \g_phfcct_cmd_to_handle_prop {#2} \l_phfcct_maker_handle_tl
     \prop_gput:NnV \g_phfcct_cmd_to_initials_prop {#2} \l_phfcct_maker_initials_tl
     \tl_if_blank:VF \l_phfcct_maker_userid_tl

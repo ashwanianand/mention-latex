@@ -65,6 +65,12 @@ The package requires \pkg{phfcc}, \pkg{xparse}, \pkg{xcolor}, and
 \pkg{marginnote}.  The optional automatic viewer detection path can use
 \pkg{catchfile} and \pkg{texosquery} when they are available.
 
+The built-in color cycle uses private copies of Paul Tol's muted
+colorblind-friendly \pkg{colorblind} colors |T-Q-M1| through |T-Q-M9|.  If
+\pkg{colorblind} has already defined those colors, \pkg{mention} copies them;
+otherwise it uses the same RGB values internally.  The package does not load
+\pkg{colorblind} and does not redefine document colors.
+
 \section{Defining Authors}
 
 \subsection{The author command factory}
@@ -74,7 +80,6 @@ Define one author command per collaborator:
 \begin{verbatim}
 \phfMakeTargetedCommentCommand[
   initials={AL},
-  color=blue,
   handle=alice,
   userid=alice-laptop
 ]{Alice}
@@ -99,7 +104,7 @@ userid & Optional system user id mapped to the handle. \\
 
 If \opt{initials} is omitted, the command name is used.  If \opt{handle} is
 omitted, the lower-cased command name is used.  If \opt{color} is omitted, the
-package chooses the next color from its built-in cycle.
+package chooses the next color from its built-in colorblind-friendly cycle.
 
 \section{Writing Comments}
 
