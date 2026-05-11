@@ -1,0 +1,310 @@
+\documentclass{ltxdoc}
+
+\usepackage[T1]{fontenc}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{url}
+
+\setlength{\emergencystretch}{2em}
+
+\title{The \textsf{mention} Package}
+\author{Ashwani Anand}
+\date{2026/05/11}
+
+\newcommand*\pkg[1]{\textsf{#1}}
+\newcommand*\file[1]{\path{#1}}
+\newcommand*\opt[1]{\texttt{#1}}
+\newcommand*\csnamefmt[1]{\texttt{\symbol{92}#1}}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+  The \pkg{mention} package adds targeted collaborative comments on top of
+  \pkg{phfcc}.  Comments remain visible inline in the source document, while
+  only the addressed collaborator sees margin highlights and a header summary
+  of unresolved comments for the active viewer.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+
+Collaborative drafts often need comments that are visible in context but routed
+to a specific co-author.  The \pkg{mention} package provides one command per
+author, a recipient list for each comment, optional important-comment styling,
+and a resolved flag that keeps old comments visible without counting them as
+open work.
+
+The package is intentionally small.  It depends on \pkg{phfcc} for the base
+commenting environment and on common LaTeX packages for colors, margin notes,
+and command parsing.  Automatic viewer detection is best-effort; projects that
+need the most predictable behavior should use a local \file{phfcc-local.cfg}
+file.
+
+\section{Installation}
+
+Place \file{mention.sty} where TeX can find it.  For a single project, putting
+the file next to the main \file{.tex} document is enough:
+
+\begin{verbatim}
+project/
+  paper.tex
+  mention.sty
+  phfcc-local.cfg.example
+\end{verbatim}
+
+Then load the package with:
+
+\begin{verbatim}
+\usepackage{mention}
+\end{verbatim}
+
+The package requires \pkg{phfcc}, \pkg{xparse}, \pkg{xcolor}, and
+\pkg{marginnote}.  The optional automatic viewer detection path can use
+\pkg{catchfile} and \pkg{texosquery} when they are available.
+
+\section{Defining Authors}
+
+\subsection{The author command factory}
+
+Define one author command per collaborator:
+
+\begin{verbatim}
+\phfMakeTargetedCommentCommand[
+  initials={AL},
+  color=blue,
+  handle=alice,
+  userid=alice-laptop
+]{Alice}
+\end{verbatim}
+
+This defines a command named |\Alice|.  Its comments are printed inline using
+the configured color.  If a comment targets the active viewer, a margin note is
+also printed using the author's initials.
+
+\begin{center}
+\begin{tabular}{>{\ttfamily}ll}
+\toprule
+Option & Meaning \\
+\midrule
+initials & Short text printed in margin notes. \\
+color & Any color expression accepted by \pkg{xcolor}. \\
+handle & Stable collaborator handle used in recipient lists. \\
+userid & Optional system user id mapped to the handle. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+If \opt{initials} is omitted, the command name is used.  If \opt{handle} is
+omitted, the lower-cased command name is used.  If \opt{color} is omitted, the
+package chooses the next color from its built-in cycle.
+
+\section{Writing Comments}
+
+Comments use the optional argument for recipient handles:
+
+\begin{verbatim}
+\Alice[bob]{Please check this lemma.}
+\Alice[bob, claire]{Please verify this proof.}
+\Alice![bob]{Please add the missing citation.}
+\Alice[bob, resolved]{This has already been handled.}
+\end{verbatim}
+
+The form with |!| marks a comment as important.  Important comments use a
+stronger filled margin label for the active viewer.
+
+The special recipient-list item \opt{resolved} makes a comment dormant.  It
+still appears inline, but it is not routed to anyone, does not get a margin
+note, and does not contribute to unresolved counts.
+
+\section{Viewer Selection}
+
+\subsection{Direct handle selection}
+
+Set the active viewer directly by handle:
+
+\begin{verbatim}
+\phfSetViewer{bob}
+\end{verbatim}
+
+\subsection{User-id selection}
+
+Set the active viewer by user id.  If the user id was registered through an
+author's \opt{userid} option, it maps to that author's handle:
+
+\begin{verbatim}
+\phfSetViewerUser{bob-laptop}
+\end{verbatim}
+
+\subsection{Explicit user-id mappings}
+
+Register or override an explicit user-id mapping:
+
+\begin{verbatim}
+\phfRegisterViewerUser{bob-laptop}{bob}
+\end{verbatim}
+
+Viewer selection is resolved in this order:
+
+\begin{enumerate}
+  \item an explicit |\phfSetViewer{...}| call;
+  \item an explicit |\phfSetViewerUser{...}| call;
+  \item a local \file{phfcc-local.cfg} file, if present;
+  \item best-effort automatic detection.
+\end{enumerate}
+
+\subsection{Local Configuration}
+
+For shared Git repositories, the recommended workflow is to keep
+\file{phfcc-local.cfg} ignored and let each collaborator create their own copy
+from \file{phfcc-local.cfg.example}.
+
+\begin{verbatim}
+cp phfcc-local.cfg.example phfcc-local.cfg
+\end{verbatim}
+
+A local config can select a handle:
+
+\begin{verbatim}
+\phfSetViewer{bob}
+\end{verbatim}
+
+or a user id:
+
+\begin{verbatim}
+\phfSetViewerUser{bob-laptop}
+\end{verbatim}
+
+The package loads \file{phfcc-local.cfg} automatically when the document
+starts.
+
+\subsection{Automatic Detection}
+
+When no explicit viewer is set, \pkg{mention} tries to infer the compiling user.
+With shell access, it first asks \file{kpsewhich} for common user variables:
+|USER|, |USERNAME|, and |LOGNAME|.  If that does not work and \pkg{texosquery}
+is available, it tries to derive a user id from the home-directory path.
+
+This detection path is best-effort.  It may be unavailable on systems that
+disable shell escape or do not ship the optional helper packages.  Manual
+viewer selection through \file{phfcc-local.cfg} does not require shell escape.
+
+\section{Header Summary}
+
+\subsection{The standard header}
+
+Enable a centered page-header summary:
+
+\begin{verbatim}
+\phfUseTargetedCommentHeader
+\end{verbatim}
+
+The summary reports unresolved comments for the active viewer, for example:
+
+\begin{verbatim}
+There are 2 unresolved comments for you.
+\end{verbatim}
+
+The count is written through the \file{.aux} file.  Compile twice after changing
+comments or viewer selection.
+
+\section{Complete Example}
+
+\begin{verbatim}
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\setlength{\marginparwidth}{3cm}
+\usepackage{xcolor}
+\usepackage{mention}
+
+\phfMakeTargetedCommentCommand[
+  initials={AL},
+  color=blue,
+  handle=alice,
+  userid=alice-laptop
+]{Alice}
+
+\phfMakeTargetedCommentCommand[
+  initials={BO},
+  color=orange,
+  handle=bob,
+  userid=bob-laptop
+]{Bob}
+
+\phfUseTargetedCommentHeader
+
+\begin{document}
+
+We should revise this proof
+\Alice[bob]{Please check the induction step.}
+before submission.
+
+\Alice![bob]{Please add the missing citation.}
+\Alice[bob, resolved]{This earlier point is done.}
+
+\end{document}
+\end{verbatim}
+
+\section{Public Interface}
+
+\begin{center}
+\begin{tabular}{>{\ttfamily}ll}
+\toprule
+Command & Purpose \\
+\midrule
+\textbackslash phfMakeTargetedCommentCommand & define an author command \\
+\textbackslash phfSetViewer & select the active viewer by handle \\
+\textbackslash phfSetViewerUser & select the active viewer by user id \\
+\textbackslash phfRegisterViewerUser & map a user id to a handle \\
+\textbackslash phfUseTargetedCommentHeader & install the standard header \\
+\textbackslash phfTargetedCommentSummary & typeset only the summary text \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The author-command factory has the form:
+
+\begin{verbatim}
+\phfMakeTargetedCommentCommand[options]{CommandName}
+\end{verbatim}
+
+The viewer commands have the forms:
+
+\begin{verbatim}
+\phfSetViewer{handle}
+\phfSetViewerUser{userid}
+\phfRegisterViewerUser{userid}{handle}
+\end{verbatim}
+
+\section{Limitations}
+
+The response-marker commands
+\begin{verbatim}
+\phfMarkCommentResponded
+\phfccDeclareResponded
+\end{verbatim}
+are retained only as compatibility stubs and emit a warning.  Use the
+\opt{resolved} flag in a comment recipient list instead.
+
+The package does not hide inline comments from non-recipients.  Targeting only
+controls margin notes and unresolved counts.
+
+\section{License}
+
+Copyright \textcopyright{} 2026 Ashwani Anand.
+
+This work may be distributed and/or modified under the conditions of the LaTeX
+Project Public License, either version 1.3c of this license or any later
+version.
+
+This work has the LPPL maintenance status \texttt{maintained}.
+
+The Current Maintainer of this work is Ashwani Anand.
+
+This work consists of the files \file{README.md}, \file{mention.tex},
+\file{mention.sty}, \file{phfcc-local.cfg.example}, and
+\file{targeted-comments-demo.tex}, and the derived file \file{mention.pdf}.
+
+\end{document}

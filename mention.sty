@@ -1,0 +1,481 @@
+\NeedsTeXFormat{LaTeX2e}[2005/12/01]
+\ProvidesPackage{mention}
+  [2026/05/11 targeted collaborative comments built on phfcc]
+%
+% Copyright (C) 2026 Ashwani Anand
+%
+% This work may be distributed and/or modified under the conditions of the
+% LaTeX Project Public License, either version 1.3c of this license or any
+% later version.
+%
+% This work has the LPPL maintenance status `maintained'.
+%
+% The Current Maintainer of this work is Ashwani Anand.
+%
+% This work consists of the files README.md, mention.tex, mention.sty,
+% phfcc-local.cfg.example, and targeted-comments-demo.tex, and the derived file
+% mention.pdf.
+
+\RequirePackage{phfcc}
+\RequirePackage{xparse}
+\RequirePackage{marginnote}
+\IfFileExists{catchfile.sty}
+  {\RequirePackage{catchfile}}
+  {%
+    \PackageWarningNoLine{mention}
+      {Package catchfile not found; shell-based viewer detection disabled}%
+  }
+\IfFileExists{texosquery.sty}
+  {\RequirePackage{texosquery}}
+  {%
+    \PackageWarningNoLine{mention}
+      {Package texosquery not found; home-directory viewer detection disabled}%
+  }
+
+\definecolor{phfcct0}{RGB}{0,148,240}
+\definecolor{phfcct1}{RGB}{242,108,13}
+\definecolor{phfcct2}{RGB}{65,149,42}
+\definecolor{phfcct3}{RGB}{128,55,134}
+\definecolor{phfcct4}{RGB}{0,129,129}
+\definecolor{phfcct5}{RGB}{148,7,24}
+\definecolor{phfcct6}{RGB}{160,120,0}
+\definecolor{phfcct7}{RGB}{35,195,155}
+
+\ExplSyntaxOn
+\prop_new:N \g_phfcct_cmd_to_handle_prop
+\prop_new:N \g_phfcct_cmd_to_initials_prop
+\prop_new:N \g_phfcct_user_to_handle_prop
+
+\int_new:N \g_phfcct_pending_int
+\int_new:N \g_phfcct_next_color_int
+
+\tl_new:N \g_phfcct_viewer_user_tl
+\tl_new:N \g_phfcct_viewer_handle_tl
+\tl_new:N \l_phfcct_maker_initials_tl
+\tl_new:N \l_phfcct_maker_color_tl
+\tl_new:N \l_phfcct_maker_handle_tl
+\tl_new:N \l_phfcct_maker_userid_tl
+\tl_new:N \l_phfcct_comment_body_tl
+\tl_new:N \l_phfcct_maker_initials_runtime_tl
+\tl_new:N \l_phfcct_recipient_csv_tl
+\tl_new:N \l_phfcct_route_csv_tl
+\tl_new:N \l_phfcct_captured_user_tl
+\tl_new:N \l_phfcct_detected_home_tl
+\seq_new:N \l_phfcct_route_seq
+\seq_new:N \l_phfcct_home_path_seq
+\seq_new:N \g_phfcct_default_color_seq
+
+\bool_new:N \l_phfcct_resolved_bool
+\bool_new:N \g_phfcct_auto_detect_attempted_bool
+
+\cs_generate_variant:Nn \seq_set_split:Nnn { NnV }
+\cs_generate_variant:Nn \seq_if_in:NnTF { NV }
+\cs_generate_variant:Nn \tl_set_rescan:Nnn { NnV }
+
+\keys_define:nn { phfcct / maker }
+  {
+    initials .tl_set:N = \l_phfcct_maker_initials_tl,
+    color .tl_set:N = \l_phfcct_maker_color_tl,
+    handle .tl_set:N = \l_phfcct_maker_handle_tl,
+    userid .tl_set:N = \l_phfcct_maker_userid_tl,
+  }
+
+\int_gset:Nn \g_phfcct_next_color_int { 1 }
+\seq_gset_from_clist:Nn \g_phfcct_default_color_seq
+  {
+    phfcct0, phfcct1, phfcct2, phfcct3,
+    phfcct4, phfcct5, phfcct6, phfcct7
+  }
+
+\cs_new:Npn \phfcct_normalize_handle:n #1
+  {
+    \str_lowercase:f {#1}
+  }
+
+\cs_new:Npn \phfcct_normalize_userid:n #1
+  {
+    \str_lowercase:f {#1}
+  }
+
+\cs_new:Npn \phfcct_saved_count_cs:n #1
+  {
+    phfcct_saved_count_ \tl_to_str:n { \phfcct_normalize_handle:n {#1} }
+  }
+
+\cs_new_protected:Npn \phfcct_try_capture_envvar:n #1
+  {
+    \tl_if_blank:VT \g_phfcct_viewer_user_tl
+      {
+        \cs_if_exist:NT \CatchFileDef
+          {
+            \group_begin:
+              \CatchFileDef\l_phfcct_captured_user_tl
+                {|kpsewhich\space --var-value=#1\space}{}
+              \tl_set_eq:NN \l_tmpa_tl \l_phfcct_captured_user_tl
+              \tl_trim_spaces:N \l_tmpa_tl
+              \tl_set_rescan:NnV \l_tmpb_tl { } \l_tmpa_tl
+              \tl_trim_spaces:N \l_tmpb_tl
+              \tl_if_blank:VF \l_tmpb_tl
+                {
+                  \tl_gset:Nx \g_phfcct_viewer_user_tl
+                    { \phfcct_normalize_userid:n { \tl_use:N \l_tmpb_tl } }
+                }
+            \group_end:
+          }
+      }
+  }
+
+\cs_new_protected:Npn \phfcct_set_user_from_home:n #1
+  {
+    \tl_set:Nn \l_tmpa_tl {#1}
+    \tl_trim_spaces:N \l_tmpa_tl
+    \tl_if_blank:VF \l_tmpa_tl
+      {
+        \regex_replace_once:nnN { [/\\]+ \Z } { } \l_tmpa_tl
+        \regex_replace_all:nnN { \\ } { / } \l_tmpa_tl
+        \seq_set_split:NnV \l_phfcct_home_path_seq { / } \l_tmpa_tl
+        \seq_pop_right:NN \l_phfcct_home_path_seq \l_tmpb_tl
+        \tl_trim_spaces:N \l_tmpb_tl
+        \tl_if_blank:VF \l_tmpb_tl
+          {
+            \tl_gset:Nx \g_phfcct_viewer_user_tl
+              { \phfcct_normalize_userid:n { \tl_use:N \l_tmpb_tl } }
+          }
+      }
+  }
+
+\cs_new_protected:Npn \phfcct_try_detect_from_home:
+  {
+    \tl_if_blank:VT \g_phfcct_viewer_user_tl
+      {
+        \cs_if_exist:NT \TeXOSQueryHome
+          {
+            \group_begin:
+              \TeXOSQueryHome{\l_phfcct_detected_home_tl}
+              \exp_args:NV \phfcct_set_user_from_home:n
+                \l_phfcct_detected_home_tl
+            \group_end:
+          }
+      }
+  }
+
+\cs_new_protected:Npn \phfcct_auto_detect_viewer:
+  {
+    \bool_if:NF \g_phfcct_auto_detect_attempted_bool
+      {
+        \bool_gset_true:N \g_phfcct_auto_detect_attempted_bool
+        \tl_if_blank:VT \g_phfcct_viewer_handle_tl
+          {
+            \tl_if_blank:VT \g_phfcct_viewer_user_tl
+              {
+                \cs_if_exist:NT \pdfshellescape
+                  {
+                    \ifnum\pdfshellescape>0\relax
+                      \phfcct_try_capture_envvar:n { USER }
+                      \phfcct_try_capture_envvar:n { USERNAME }
+                      \phfcct_try_capture_envvar:n { LOGNAME }
+                    \fi
+                  }
+                \tl_if_blank:VT \g_phfcct_viewer_user_tl
+                  {
+                    \cs_if_exist:NT \shellescape
+                      {
+                        \ifnum\shellescape>0\relax
+                          \phfcct_try_capture_envvar:n { USER }
+                          \phfcct_try_capture_envvar:n { USERNAME }
+                          \phfcct_try_capture_envvar:n { LOGNAME }
+                        \fi
+                      }
+                  }
+                \phfcct_try_detect_from_home:
+              }
+            \tl_if_blank:VF \g_phfcct_viewer_user_tl
+              {
+                \exp_args:NV \phfSetViewerUser \g_phfcct_viewer_user_tl
+              }
+            \tl_if_blank:VTF \g_phfcct_viewer_handle_tl
+              {
+                \tl_if_blank:VF \g_phfcct_viewer_user_tl
+                  { \exp_args:NV \phfSetViewer \g_phfcct_viewer_user_tl }
+              }
+              { }
+          }
+      }
+  }
+
+\cs_new_protected:Npn \phfcct_set_command_color:nn #1#2
+  {
+    \tl_set:Nn \l_tmpa_tl {#2}
+    \tl_trim_spaces:N \l_tmpa_tl
+    \tl_if_blank:VTF \l_tmpa_tl
+      {
+        \int_compare:nNnTF
+          { \g_phfcct_next_color_int }
+          >
+          { \seq_count:N \g_phfcct_default_color_seq }
+          { \tl_set:Nn \l_tmpb_tl { red } }
+          {
+            \tl_set:Nx \l_tmpb_tl
+              {
+                \seq_item:Nn \g_phfcct_default_color_seq
+                  { \int_use:N \g_phfcct_next_color_int }
+              }
+            \int_gincr:N \g_phfcct_next_color_int
+          }
+      }
+      { \tl_set_eq:NN \l_tmpb_tl \l_tmpa_tl }
+    \exp_args:NnV \colorlet {#1color} \l_tmpb_tl
+  }
+
+\cs_new_protected:Npn \phfcct_add_recipient:n #1
+  {
+    \tl_set:Nx \l_tmpa_tl { \phfcct_normalize_handle:n {#1} }
+    \regex_replace_once:nnN { \A@ } { } \l_tmpa_tl
+    \tl_if_blank:VF \l_tmpa_tl
+      {
+        \tl_if_blank:VTF \l_phfcct_recipient_csv_tl
+          { \tl_set:Nx \l_phfcct_recipient_csv_tl { \l_tmpa_tl } }
+          {
+            \tl_put_right:Nx \l_phfcct_recipient_csv_tl { ,\l_tmpa_tl }
+          }
+      }
+  }
+
+\cs_new_protected:Npn \phfcct_parse_optional:n #1
+  {
+    \clist_map_inline:nn {#1}
+      {
+        \tl_set:Nx \l_tmpa_tl
+          { \phfcct_normalize_handle:n {##1} }
+        \tl_if_blank:VF \l_tmpa_tl
+          {
+            \str_if_eq:eeTF { \l_tmpa_tl } { resolved }
+              { \bool_set_true:N \l_phfcct_resolved_bool }
+              { \phfcct_add_recipient:n {##1} }
+          }
+      }
+  }
+
+\cs_new_protected:Npn \phfcct_parse_body:n #1
+  {
+    \tl_set:Nn \l_phfcct_comment_body_tl {#1}
+    \tl_trim_spaces:N \l_phfcct_comment_body_tl
+  }
+
+\cs_new_protected:Npn \phfcct_resolve_viewer:
+  {
+    \tl_if_blank:VTF \g_phfcct_viewer_handle_tl
+      {
+        \tl_if_blank:VF \g_phfcct_viewer_user_tl
+          {
+            \prop_get:NVNT \g_phfcct_user_to_handle_prop
+              \g_phfcct_viewer_user_tl \l_tmpa_tl
+              { \exp_args:NV \phfSetViewer \l_tmpa_tl }
+          }
+      }
+      { }
+  }
+
+\cs_new_protected:Npn \phfcct_emit_margin:nnn #1#2#3
+  {
+    \marginnote{%
+      \raggedright
+      \setlength{\fboxsep}{1pt}%
+      \IfBooleanTF{#3}
+        {
+          \colorbox{#1color}{%
+            \color{white}\normalfont\sffamily\footnotesize\strut #2}
+        }
+        {
+          \fcolorbox{#1color}{white}{%
+            \normalfont\sffamily\footnotesize\color{#1color}\strut #2}
+        }
+    }
+  }
+
+\cs_new_protected:Npn \phfcct_typeset_inline:nnn #1#2#3
+  {
+    {\leavevmode\color{#1color}\normalfont\sffamily[\,%
+      \IfBooleanTF{#2}{\textbf{#3}}{#3}%
+    \,]}%
+  }
+
+\cs_new_protected:Npn \phfcct_comment:nnnn #1#2#3#4
+  {
+    \group_begin:
+      \prop_get:NnN \g_phfcct_cmd_to_initials_prop {#1} \l_phfcct_maker_initials_runtime_tl
+      \tl_clear:N \l_phfcct_recipient_csv_tl
+      \tl_clear:N \l_phfcct_route_csv_tl
+      \bool_set_false:N \l_phfcct_resolved_bool
+      \quark_if_no_value:nF {#3}
+        { \phfcct_parse_optional:n {#3} }
+      \phfcct_parse_body:n {#4}
+      \bool_if:NF \l_phfcct_resolved_bool
+        { \tl_set_eq:NN \l_phfcct_route_csv_tl \l_phfcct_recipient_csv_tl }
+      \phfcct_resolve_viewer:
+      \tl_if_blank:VF \g_phfcct_viewer_handle_tl
+        {
+          \tl_if_blank:VF \l_phfcct_route_csv_tl
+            {
+              \seq_set_split:NnV \l_phfcct_route_seq { , } \l_phfcct_route_csv_tl
+              \seq_if_in:NVTF \l_phfcct_route_seq \g_phfcct_viewer_handle_tl
+                {
+                  \int_gincr:N \g_phfcct_pending_int
+                  \phfcct_emit_margin:nnn
+                    {#1}
+                    { \l_phfcct_maker_initials_runtime_tl }
+                    {#2}
+                }
+                { }
+            }
+        }
+      \phfcct_typeset_inline:nnn {#1} {#2} { \l_phfcct_comment_body_tl }
+    \group_end:
+  }
+
+\cs_new_protected:Npn \phfcct_define_command:nn #1#2
+  {
+    \tl_clear:N \l_phfcct_maker_initials_tl
+    \tl_clear:N \l_phfcct_maker_color_tl
+    \tl_clear:N \l_phfcct_maker_handle_tl
+    \tl_clear:N \l_phfcct_maker_userid_tl
+    \keys_set:nn { phfcct / maker } {#1}
+    \tl_if_blank:VT \l_phfcct_maker_initials_tl
+      { \tl_set:Nn \l_phfcct_maker_initials_tl {#2} }
+    \tl_if_blank:VT \l_phfcct_maker_handle_tl
+      { \tl_set:Nx \l_phfcct_maker_handle_tl { \phfcct_normalize_handle:n {#2} } }
+    \tl_set:Nx \l_phfcct_maker_handle_tl
+      { \phfcct_normalize_handle:n { \l_phfcct_maker_handle_tl } }
+    \phfcct_set_command_color:nn {#2} { \l_phfcct_maker_color_tl }
+    \prop_gput:NnV \g_phfcct_cmd_to_handle_prop {#2} \l_phfcct_maker_handle_tl
+    \prop_gput:NnV \g_phfcct_cmd_to_initials_prop {#2} \l_phfcct_maker_initials_tl
+    \tl_if_blank:VF \l_phfcct_maker_userid_tl
+      {
+        \tl_set:Nx \l_tmpa_tl
+          { \phfcct_normalize_userid:n { \l_phfcct_maker_userid_tl } }
+        \prop_gput:NVV \g_phfcct_user_to_handle_prop
+          \l_tmpa_tl
+          \l_phfcct_maker_handle_tl
+      }
+    \exp_args:Nc \DeclareDocumentCommand {#2} { t! o m }
+      {
+        \phfcct_comment:nnnn {#2} {##1} {##2} {##3}
+      }
+    \phfcct_resolve_viewer:
+  }
+
+\newcommand\phfMakeTargetedCommentCommand[2][]
+  { \phfcct_define_command:nn {#1} {#2} }
+
+\NewDocumentCommand\phfSetViewerUser{ m }
+  {
+    \tl_gset:Nx \g_phfcct_viewer_user_tl
+      { \phfcct_normalize_userid:n {#1} }
+    \tl_gclear:N \g_phfcct_viewer_handle_tl
+    \phfcct_resolve_viewer:
+  }
+
+\NewDocumentCommand\phfSetViewer{ m }
+  {
+    \tl_gclear:N \g_phfcct_viewer_user_tl
+    \tl_gset:Nx \g_phfcct_viewer_handle_tl
+      { \phfcct_normalize_handle:n {#1} }
+  }
+
+\NewDocumentCommand\phfRegisterViewerUser{ m m }
+  {
+    \prop_gput:Nnx \g_phfcct_user_to_handle_prop
+      { \phfcct_normalize_userid:n {#1} }
+      { \phfcct_normalize_handle:n {#2} }
+    \phfcct_resolve_viewer:
+  }
+
+\NewDocumentCommand\phfMarkCommentResponded{ m }
+  {
+    \PackageWarning{mention}
+      {
+        \string\phfMarkCommentResponded\space is not implemented\MessageBreak
+        in mention; use the `resolved' flag in the comment\MessageBreak
+        recipient list instead
+      }
+  }
+\NewDocumentCommand\phfccDeclareResponded{ m }
+  {
+    \PackageWarning{mention}
+      {
+        \string\phfccDeclareResponded\space is not implemented\MessageBreak
+        in mention; use the `resolved' flag in the comment\MessageBreak
+        recipient list instead
+      }
+  }
+
+\cs_new_protected:Npn \phfcct_set_saved_count:nn #1#2
+  {
+    \cs_gset:cpn { \phfcct_saved_count_cs:n {#1} } {#2}
+  }
+
+\NewDocumentCommand\phfcctSetViewerPendingCount{ m m }
+  { \phfcct_set_saved_count:nn {#1} {#2} }
+
+\NewDocumentCommand\phfccSetViewerPendingCount{ m m }
+  { \phfcct_set_saved_count:nn {#1} {#2} }
+
+\NewDocumentCommand\phfTargetedCommentSummary{}
+  {
+    \phfcct_resolve_viewer:
+    \tl_if_blank:VTF \g_phfcct_viewer_handle_tl
+      { }
+      {
+        \cs_if_exist:cTF
+          { \phfcct_saved_count_cs:n { \g_phfcct_viewer_handle_tl } }
+          {
+            There\space are\space
+            \cs_use:c { \phfcct_saved_count_cs:n { \g_phfcct_viewer_handle_tl } }
+            \space unresolved\space comments\space for\space you.
+          }
+          {
+            There\space are\space \int_use:N \g_phfcct_pending_int
+            \space unresolved\space comments\space for\space you.
+          }
+      }
+  }
+
+\NewDocumentCommand\phfUseTargetedCommentHeader{}
+  {
+    \RequirePackage{fancyhdr}
+    \setlength{\headheight}{14pt}
+    \pagestyle{fancy}
+    \fancyhf{}
+    \fancyhead[C]{\phfTargetedCommentSummary}
+    \fancyfoot[C]{\thepage}
+    \fancypagestyle{plain}
+      {
+        \fancyhf{}
+        \fancyhead[C]{\phfTargetedCommentSummary}
+        \fancyfoot[C]{\thepage}
+        \renewcommand{\headrulewidth}{0.4pt}
+      }
+    \renewcommand{\headrulewidth}{0.4pt}
+  }
+
+\AtBeginDocument
+  {
+    \InputIfFileExists{phfcc-local.cfg}{}{}
+    \phfcct_resolve_viewer:
+    \phfcct_auto_detect_viewer:
+  }
+
+\AtEndDocument
+  {
+    \phfcct_resolve_viewer:
+    \tl_if_blank:VF \g_phfcct_viewer_handle_tl
+      {
+        \protected@write\@auxout{}{%
+          \string\phfcctSetViewerPendingCount
+            {\g_phfcct_viewer_handle_tl}
+            {\int_use:N \g_phfcct_pending_int}}
+      }
+  }
+\ExplSyntaxOff
+
+\endinput

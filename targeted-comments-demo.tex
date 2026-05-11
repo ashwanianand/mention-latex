@@ -1,0 +1,85 @@
+% Copyright (C) 2026 Ashwani Anand
+%
+% This work may be distributed and/or modified under the conditions of the
+% LaTeX Project Public License, either version 1.3c of this license or any
+% later version.
+%
+% This work has the LPPL maintenance status `maintained'.
+%
+% The Current Maintainer of this work is Ashwani Anand.
+
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\setlength{\marginparwidth}{3cm}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{mention}
+
+\phfMakeTargetedCommentCommand[
+  initials={AL},
+  color=blue,
+  handle=alice,
+  userid=alice-mac
+]{Alice}
+
+\phfMakeTargetedCommentCommand[
+  initials={BO},
+  color=orange,
+  handle=bob,
+  userid=bob-desktop
+]{Bob}
+
+\phfMakeTargetedCommentCommand[
+  initials={CL},
+  color=green!50!black,
+  handle=claire,
+  userid=claire-linux
+]{Claire}
+
+
+\phfMakeTargetedCommentCommand[
+  initials={AA},
+  color=green!50!black,
+  handle=ashwani,
+  userid=ashwani
+]{AshwaniAnand}
+
+% Optional manual override:
+% \phfSetViewer{ashwani}
+% \phfSetViewerUser{ashwani}
+\phfUseTargetedCommentHeader
+
+\title{Targeted Comment Demo}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+This paragraph contains comments for different co-authors.
+Only the active viewer should get the matching margin highlights.
+
+We propose a cleaner proof strategy
+\Alice[bob, claire]{Please verify the induction step before we submit.}
+for the main theorem.
+
+The terminology in this section
+\Claire[alice]{Can you confirm whether ``estimator'' is the right word here?}
+still needs one more review pass.
+
+Important requests get a stronger margin box:
+\Alice![bob, ashwani]{Please add the missing citation before we freeze the draft.}
+
+Resolved comments stay visible inline, but they do not target anyone:
+\Alice[bob, resolved]{This point has already been handled.}
+
+Bob can still reply inline in the usual way:
+\Bob[alice, ashwani]{I took care of the comment.}
+
+The active viewer can come from a local override or from automatic user-id
+detection, so only that person's open comments appear in the margin and
+contribute to the header count.
+
+\end{document}
