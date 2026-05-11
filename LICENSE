@@ -13,5 +13,5 @@ This work has the LPPL maintenance status `maintained'.
 The Current Maintainer of this work is Ashwani Anand.
 
 This work consists of the files README.md, mention.tex, mention.sty,
-phfcc-local.cfg.example, and targeted-comments-demo.tex, and the derived file
+mention-local.cfg.example, and targeted-comments-demo.tex, and the derived file
 mention.pdf.

@@ -13,7 +13,7 @@ unresolved-comment count in the page header.
 - `mention.tex`: CTAN-style manual source
 - `mention.pdf`: built package manual
 - `targeted-comments-demo.tex`: minimal example document
-- `phfcc-local.cfg.example`: optional per-user viewer config template
+- `mention-local.cfg.example`: optional per-user viewer config template
 
 The package depends on `phfcc`, `xparse`, `marginnote`, and `xcolor`.
 Automatic viewer detection can also use `catchfile` and `texosquery` when they
@@ -76,15 +76,15 @@ Viewer selection order:
 
 1. `\phfSetViewer{...}` in the document
 2. `\phfSetViewerUser{...}` in the document
-3. `phfcc-local.cfg`, if present in the compile directory
+3. `mention-local.cfg`, if present in the compile directory
 4. best-effort automatic user detection
 
 For shared projects, the most predictable setup is to keep viewer selection out
 of the tracked source and let each collaborator create an ignored
-`phfcc-local.cfg`. Start from the tracked template:
+`mention-local.cfg`. Start from the tracked template:
 
 ```bash
-cp phfcc-local.cfg.example phfcc-local.cfg
+cp mention-local.cfg.example mention-local.cfg
 ```
 
 Then edit it to select your viewer:
@@ -101,7 +101,7 @@ or:
 
 Automatic detection tries to infer the compiling user id and map it through
 registered `userid=...` values. If detection helpers or shell access are not
-available, the package still loads; use `phfcc-local.cfg` or an explicit
+available, the package still loads; use `mention-local.cfg` or an explicit
 viewer command.
 
 ## Demo
@@ -113,7 +113,7 @@ latexmk -pdf targeted-comments-demo.tex
 ```
 
 If automatic detection is unavailable on your system, create
-`phfcc-local.cfg` with:
+`mention-local.cfg` with:
 
 ```tex
 \phfSetViewer{ashwani}
@@ -144,5 +144,5 @@ This work has the LPPL maintenance status `maintained`.
 The Current Maintainer of this work is Ashwani Anand.
 
 This work consists of the files `README.md`, `mention.tex`, `mention.sty`,
-`phfcc-local.cfg.example`, and `targeted-comments-demo.tex`, and the derived
+`mention-local.cfg.example`, and `targeted-comments-demo.tex`, and the derived
 file `mention.pdf`.

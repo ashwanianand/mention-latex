@@ -15,7 +15,7 @@
 *.gls
 *.lot
 *.lof
-phfcc-local.cfg
+mention-local.cfg
 .agents/
 .codex/
 .git/

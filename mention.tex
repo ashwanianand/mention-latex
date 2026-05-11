@@ -40,7 +40,7 @@ open work.
 The package is intentionally small.  It depends on \pkg{phfcc} for the base
 commenting environment and on common LaTeX packages for colors, margin notes,
 and command parsing.  Automatic viewer detection is best-effort; projects that
-need the most predictable behavior should use a local \file{phfcc-local.cfg}
+need the most predictable behavior should use a local \file{mention-local.cfg}
 file.
 
 \section{Installation}
@@ -52,7 +52,7 @@ the file next to the main \file{.tex} document is enough:
 project/
   paper.tex
   mention.sty
-  phfcc-local.cfg.example
+  mention-local.cfg.example
 \end{verbatim}
 
 Then load the package with:
@@ -151,18 +151,18 @@ Viewer selection is resolved in this order:
 \begin{enumerate}
   \item an explicit |\phfSetViewer{...}| call;
   \item an explicit |\phfSetViewerUser{...}| call;
-  \item a local \file{phfcc-local.cfg} file, if present;
+  \item a local \file{mention-local.cfg} file, if present;
   \item best-effort automatic detection.
 \end{enumerate}
 
 \subsection{Local Configuration}
 
 For shared Git repositories, the recommended workflow is to keep
-\file{phfcc-local.cfg} ignored and let each collaborator create their own copy
-from \file{phfcc-local.cfg.example}.
+\file{mention-local.cfg} ignored and let each collaborator create their own copy
+from \file{mention-local.cfg.example}.
 
 \begin{verbatim}
-cp phfcc-local.cfg.example phfcc-local.cfg
+cp mention-local.cfg.example mention-local.cfg
 \end{verbatim}
 
 A local config can select a handle:
@@ -177,7 +177,7 @@ or a user id:
 \phfSetViewerUser{bob-laptop}
 \end{verbatim}
 
-The package loads \file{phfcc-local.cfg} automatically when the document
+The package loads \file{mention-local.cfg} automatically when the document
 starts.
 
 \subsection{Automatic Detection}
@@ -189,7 +189,7 @@ is available, it tries to derive a user id from the home-directory path.
 
 This detection path is best-effort.  It may be unavailable on systems that
 disable shell escape or do not ship the optional helper packages.  Manual
-viewer selection through \file{phfcc-local.cfg} does not require shell escape.
+viewer selection through \file{mention-local.cfg} does not require shell escape.
 
 \section{Header Summary}
 
@@ -304,7 +304,7 @@ This work has the LPPL maintenance status \texttt{maintained}.
 The Current Maintainer of this work is Ashwani Anand.
 
 This work consists of the files \file{README.md}, \file{mention.tex},
-\file{mention.sty}, \file{phfcc-local.cfg.example}, and
+\file{mention.sty}, \file{mention-local.cfg.example}, and
 \file{targeted-comments-demo.tex}, and the derived file \file{mention.pdf}.
 
 \end{document}

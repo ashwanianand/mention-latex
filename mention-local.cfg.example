@@ -8,7 +8,7 @@
 %
 % The Current Maintainer of this work is Ashwani Anand.
 %
-% Copy this file to phfcc-local.cfg and edit the viewer for your machine.
+% Copy this file to mention-local.cfg and edit the viewer for your machine.
 %
 % Use the handle form when you know the collaborator handle used in comments:
 \phfSetViewer{your-handle}

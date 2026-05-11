@@ -13,7 +13,7 @@
 % The Current Maintainer of this work is Ashwani Anand.
 %
 % This work consists of the files README.md, mention.tex, mention.sty,
-% phfcc-local.cfg.example, and targeted-comments-demo.tex, and the derived file
+% mention-local.cfg.example, and targeted-comments-demo.tex, and the derived file
 % mention.pdf.
 
 \RequirePackage{phfcc}
@@ -460,7 +460,7 @@
 
 \AtBeginDocument
   {
-    \InputIfFileExists{phfcc-local.cfg}{}{}
+    \InputIfFileExists{mention-local.cfg}{}{}
     \phfcct_resolve_viewer:
     \phfcct_auto_detect_viewer:
   }
