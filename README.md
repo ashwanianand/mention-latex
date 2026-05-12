@@ -15,6 +15,7 @@ unresolved-comment count in the page header.
 - `mention.tex`: CTAN-style manual source
 - `mention.pdf`: built package manual
 - `targeted-comments-demo.tex`: minimal example document
+- `targeted-comments-demo.pdf`: built demo document
 - `mention-local.cfg.example`: optional per-user viewer config template
 
 The package depends on `phfcc`, `xparse`, `marginnote`, and `xcolor`.
@@ -130,14 +131,18 @@ viewer command.
 
 ## Demo
 
+A built demo PDF is available at
+[`targeted-comments-demo.pdf`](targeted-comments-demo.pdf).
+
 From the repository root:
 
 ```bash
 latexmk -pdf targeted-comments-demo.tex
 ```
 
-If automatic detection is unavailable on your system, create
-`mention-local.cfg` with:
+The demo source explicitly selects `ashwani` as the active viewer so the
+checked-in PDF is reproducible. To try another viewer, change that line or
+create `mention-local.cfg` with:
 
 ```tex
 \phfSetViewer{ashwani}
@@ -169,4 +174,4 @@ The Current Maintainer of this work is Ashwani Anand.
 
 This work consists of the files `README.md`, `mention.tex`, `mention.sty`,
 `mention-local.cfg.example`, and `targeted-comments-demo.tex`, and the derived
-file `mention.pdf`.
+files `mention.pdf` and `targeted-comments-demo.pdf`.

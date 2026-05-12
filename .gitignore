@@ -5,6 +5,7 @@
 *.out
 *.pdf
 !mention.pdf
+!targeted-comments-demo.pdf
 *.synctex.gz
 *.toc
 *.idx

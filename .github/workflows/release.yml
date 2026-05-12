@@ -60,7 +60,7 @@ jobs:
           - Choose automatic colorblind-friendly author colors, with explicit color overrides when needed.
           - Configure the active viewer with `mention-local.cfg` or best-effort automatic detection.
 
-          Assets include the package file, manual source and PDF, README, license, example config, and demo document.
+          Assets include the package file, manual source and PDF, README, license, example config, demo source, and demo PDF.
           EOF
 
       - name: Create or update GitHub release
@@ -78,6 +78,7 @@ jobs:
             LICENSE
             mention-local.cfg.example
             targeted-comments-demo.tex
+            targeted-comments-demo.pdf
           )
 
           if gh release view "$TAG" >/dev/null 2>&1; then

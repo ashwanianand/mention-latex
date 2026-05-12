@@ -1,0 +1,40 @@
+name: Build demo PDF
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - mention.sty
+      - targeted-comments-demo.tex
+      - .github/workflows/demo-pdf.yml
+  pull_request:
+    paths:
+      - mention.sty
+      - targeted-comments-demo.tex
+      - .github/workflows/demo-pdf.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  demo-pdf:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out package
+        uses: actions/checkout@v4
+
+      - name: Compile demo
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: targeted-comments-demo.tex
+          args: -pdf -interaction=nonstopmode -halt-on-error -file-line-error
+
+      - name: Upload demo PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: targeted-comments-demo
+          path: targeted-comments-demo.pdf
+          if-no-files-found: error
