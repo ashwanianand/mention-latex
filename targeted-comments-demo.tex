@@ -42,9 +42,14 @@
   userid=ashwani
 ]{AshwaniAnand}
 
-% Select one viewer so the checked-in demo PDF is reproducible.
+% Select one viewer so the generated demo PDF is reproducible.
 \phfSetViewer{ashwani}
 \phfUseTargetedCommentHeader
+
+\newcommand*\scenario[2]{%
+  \par\smallskip\noindent
+  \textbf{#1}\quad{\small\texttt{#2}}\quad
+}
 
 \title{Targeted Comment Demo}
 \author{}
@@ -53,32 +58,50 @@
 \begin{document}
 \maketitle
 
-This paragraph contains comments for different co-authors.
-Only the active viewer should get the matching margin highlights.
+This PDF is compiled from the perspective of
+\textbf{\texttt{ashwani}}.  Inline comments are always visible, but margin
+boxes and the header count only appear for unresolved comments addressed to
+\texttt{ashwani}, or to \texttt{all}.
 
+\scenario{Alice to Bob and Claire}{\string\Alice[bob, claire]}
 We propose a cleaner proof strategy
 \Alice[bob, claire]{Please verify the induction step before we submit.}
-for the main theorem.
+for the main theorem.  Since this is not for \texttt{ashwani}, there is no
+margin box for this comment in this PDF.
 
+\scenario{Claire to Alice}{\string\Claire[alice]}
 The terminology in this section
 \Claire[alice]{Can you confirm whether ``estimator'' is the right word here?}
-still needs one more review pass.
+still needs one more review pass.  This is visible inline but not highlighted
+for \texttt{ashwani}.
 
+\scenario{Alice to Bob and Ashwani, important}{\string\Alice![bob, ashwani]}
 Important requests get a stronger margin box:
 \Alice![bob, ashwani]{Please add the missing citation before we freeze the draft.}
+This one is addressed to \texttt{ashwani}, so it contributes to the margin and
+header count.
 
+\scenario{Claire to everyone}{\string\Claire[all]}
 Shared requests can target everyone:
 \Claire[all]{Please check whether this paragraph still matches the introduction.}
+The special target \texttt{all} is shown to every active viewer.
 
+\scenario{Alice to Bob, resolved}{\string\Alice[bob, resolved]}
 Resolved comments stay visible inline, but they do not target anyone:
 \Alice[bob, resolved]{This point has already been handled.}
+The \texttt{resolved} tag suppresses margin notes and counters.
 
+\scenario{Bob to Alice and Ashwani}{\string\Bob[alice, ashwani]}
 Bob can still reply inline in the usual way:
 \Bob[alice, ashwani]{I took care of the comment.}
+This reply is addressed to \texttt{ashwani}, so it is highlighted.
 
+\scenario{Alice and Bob to Ashwani at the same spot}{two adjacent comments}
 Adjacent comments for the same active viewer share one margin note:
 \Alice[ashwani]{Please check the notation here.}
 \Bob[ashwani]{Also verify the citation label.}
+Both are for \texttt{ashwani}, and their margin initials are shown side by
+side.
 
 The active viewer can come from a local override or from automatic user-id
 detection, so only that person's open comments appear in the margin and
