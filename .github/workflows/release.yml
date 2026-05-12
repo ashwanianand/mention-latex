@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  github-release:
+    if: startsWith(github.ref, 'refs/tags/v') || contains(github.event.head_commit.message, '[release]') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out package
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Select tag
+        id: release
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            tag="${GITHUB_REF_NAME}"
+          elif [[ -n "${{ inputs.tag }}" ]]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="$(git describe --tags --abbrev=0)"
+          fi
+
+          if [[ ! "$tag" =~ ^v[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
+            echo "Refusing to publish non-semver release tag: $tag" >&2
+            exit 1
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Write release notes
+        shell: bash
+        run: |
+          cat > RELEASE_NOTES.md <<'EOF'
+          First public release of `mention`, a LaTeX package for targeted collaborative comments built on `phfcc`.
+
+          Highlights:
+          - Define one comment command per collaborator.
+          - Route comments to named recipients, or use `all` to show a comment to everyone.
+          - Mark comments as `resolved` so they stay visible inline without adding margin notes or counter entries.
+          - Choose automatic colorblind-friendly author colors, with explicit color overrides when needed.
+          - Configure the active viewer with `mention-local.cfg` or best-effort automatic detection.
+
+          Assets include the package file, manual source and PDF, README, license, example config, and demo document.
+          EOF
+
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ steps.release.outputs.version }}
+        shell: bash
+        run: |
+          assets=(
+            mention.pdf
+            mention.sty
+            mention.tex
+            README.md
+            LICENSE
+            mention-local.cfg.example
+            targeted-comments-demo.tex
+          )
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${assets[@]}" --clobber
+          else
+            gh release create "$TAG" "${assets[@]}" \
+              --title "mention $VERSION" \
+              --notes-file RELEASE_NOTES.md
+          fi
