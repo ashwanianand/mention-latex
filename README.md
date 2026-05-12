@@ -1,5 +1,9 @@
 # mention
 
+[![release v0.1.0](https://img.shields.io/badge/release-v0.1.0-blue)](https://github.com/ashwanianand/mention-latex/releases/tag/v0.1.0)
+[![demo PDF](https://img.shields.io/badge/demo-PDF-success)](https://github.com/ashwanianand/mention-latex/releases/download/demo-pdf/targeted-comments-demo.pdf)
+[![license LPPL 1.3c+](https://img.shields.io/badge/license-LPPL%201.3c%2B-lightgrey)](LICENSE)
+
 Current release: `v0.1.0` (2026-05-12).
 
 `mention` adds co-author targeted comments on top of the LaTeX
