@@ -1,5 +1,7 @@
 # mention
 
+Current release: `v0.1.0` (2026-05-12).
+
 `mention` adds co-author targeted comments on top of the LaTeX
 [`phfcc`](https://ctan.org/pkg/phfcc) package.
 
