@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   demo-pdf:
@@ -38,3 +38,18 @@ jobs:
           name: targeted-comments-demo
           path: targeted-comments-demo.pdf
           if-no-files-found: error
+
+      - name: Publish stable demo PDF
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if gh release view demo-pdf >/dev/null 2>&1; then
+            gh release upload demo-pdf targeted-comments-demo.pdf --clobber
+          else
+            gh release create demo-pdf targeted-comments-demo.pdf \
+              --title "Latest compiled demo PDF" \
+              --notes "Automatically built from targeted-comments-demo.tex on main." \
+              --prerelease
+          fi

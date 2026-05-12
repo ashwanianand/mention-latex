@@ -63,6 +63,12 @@ jobs:
           Assets include the package file, manual source and PDF, README, license, example config, demo source, and demo PDF.
           EOF
 
+      - name: Compile demo PDF
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: targeted-comments-demo.tex
+          args: -pdf -interaction=nonstopmode -halt-on-error -file-line-error
+
       - name: Create or update GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
