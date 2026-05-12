@@ -128,15 +128,22 @@ Comments use the optional argument for recipient handles:
 \Alice[bob]{Please check this lemma.}
 \Alice[bob, claire]{Please verify this proof.}
 \Alice![bob]{Please add the missing citation.}
+\Alice[all]{Everyone should review this sentence.}
 \Alice[bob, resolved]{This has already been handled.}
+\Alice[all, resolved]{This global note is done.}
 \end{verbatim}
 
 The form with |!| marks a comment as important.  Important comments use a
 stronger filled margin label for the active viewer.
 
+The special recipient-list item \opt{all} routes a comment to every active
+viewer.  Every viewer who compiles the document sees the margin note and gets
+the comment included in their unresolved-count total.
+
 The special recipient-list item \opt{resolved} makes a comment dormant.  It
 still appears inline, but it is not routed to anyone, does not get a margin
-note, and does not contribute to unresolved counts.
+note, and does not contribute to unresolved counts.  If \opt{all} and
+\opt{resolved} are both present, \opt{resolved} wins.
 
 Consecutive comments for the active viewer share one side-by-side margin note.
 This keeps co-authors who comment at the same spot from covering each other in

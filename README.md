@@ -66,15 +66,20 @@ Use comma-separated recipient handles in the optional argument:
 ```tex
 \Alice[bob]{Please check this lemma.}
 \Alice![bob]{Please add the missing citation.}
+\Alice[all]{Everyone should review this sentence.}
 \Alice[bob, resolved]{This has already been handled.}
+\Alice[all, resolved]{This global note is done.}
 ```
 
 Semantics:
 
 - `\Alice[bob, claire]{...}` targets Bob and Claire.
 - `\Alice![bob]{...}` marks the comment as important.
+- `all` targets every active viewer and contributes to the unresolved-count
+  total for each viewer who compiles the document.
 - `resolved` keeps the comment visible inline but makes it dormant: no margin
   highlight and no unresolved-count contribution.
+- If `all` and `resolved` are both present, `resolved` wins.
 - Consecutive comments for the active viewer share one side-by-side margin
   note, so co-authors commenting at the same spot do not cover each other.
 
